@@ -8,17 +8,15 @@
     "start": "next start"
   },
   "dependencies": {
-    "@tailwindcss/postcss": "^4.3.3",
-    "motion": "^13.3.0",
     "next": "latest",
     "react": "latest",
     "react-dom": "latest",
-    "tailwindcss": "^4.3.3"
+    "motion": "latest"
   },
   "devDependencies": {
+    "typescript": "latest",
     "@types/node": "latest",
     "@types/react": "latest",
-    "@types/react-dom": "latest",
-    "typescript": "latest"
+    "@types/react-dom": "latest"
   }
 }
