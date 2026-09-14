@@ -1,9 +1,9 @@
+import Link from "next/link";
+
+function BrandMark() {
+  return <span className="home-brand-mark" aria-hidden="true"><i /><i /><i /></span>;
+}
+
 export default function Home() {
-  return (
-    <main className="flex min-h-screen items-center justify-center">
-      <h1 className="text-3xl font-bold">
-        ActiGait is working
-      </h1>
-    </main>
-  );
+  return <main className="home-shell"><nav className="home-nav"><Link className="home-brand" href="/"><BrandMark /><span><strong>ACTIGAIT</strong><small>EXOSUIT / OS 2.4</small></span></Link><div className="home-nav-links"><Link href="/dashboard/gait-analysis">Gait analysis</Link><Link href="/dashboard">Control center</Link></div><Link className="home-nav-cta" href="/dashboard"><span>OPEN CONSOLE</span><b>-&gt;</b></Link></nav><section className="home-hero"><div className="home-hero-copy"><div className="home-kicker"><span className="home-pulse" /> LOCAL DEMO / EXOSUIT OPERATING SYSTEM</div><h1>Movement, <em>made intelligent.</em></h1><p>ActiGait is a simulated exosuit control platform for exploring movement intent, gait signals, and adaptive assistance in one focused workspace.</p><div className="home-actions"><Link className="home-primary" href="/dashboard">Enter control center <span>-&gt;</span></Link><Link className="home-secondary" href="/dashboard/gait-analysis">Explore gait analysis</Link></div><div className="home-disclaimer"><span>i</span><span>SIMULATED INTERFACE</span><p>All readings are local demo values for product exploration. No medical device is connected.</p></div></div><div className="home-system-visual" aria-label="Abstract simulated exosuit system visualization"><div className="home-orbit home-orbit-outer" /><div className="home-orbit home-orbit-inner" /><div className="home-figure"><div className="home-figure-core"><span>AG-X</span><strong>READY</strong></div><i className="home-joint home-joint-left" /><i className="home-joint home-joint-right" /><i className="home-joint home-joint-bottom" /></div><div className="home-signal home-signal-top">CONNECTION <strong>EXCELLENT</strong></div><div className="home-signal home-signal-bottom">CYCLE MODEL <strong>ACTIVE</strong></div></div></section><section className="home-strip"><div><span className="home-strip-index">01</span><div><strong>Observe</strong><p>See simulated movement signals resolve in real time.</p></div></div><div><span className="home-strip-index">02</span><div><strong>Understand</strong><p>Compare cadence, symmetry, and cycle behavior.</p></div></div><div><span className="home-strip-index">03</span><div><strong>Adapt</strong><p>Shape assistance response through the local controls.</p></div></div></section><footer className="home-footer"><span>ACTIGAIT EXOSUIT / CONTROL PLATFORM</span><span><i className="home-pulse home-pulse-green" /> SYSTEM READY / DEMO MODE</span></footer></main>;
 }
