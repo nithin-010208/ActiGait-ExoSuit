@@ -1,0 +1,10 @@
+"""Exploratory fatigue-proxy note for ActiGait."""
+print('ActiGait Fatigue Analysis')
+print('-------------------------')
+print('A clinically valid fatigue score cannot be established from this single short trial.')
+print('Once repeated real walking trials are available, compare early vs late windows using:')
+print('- cadence trend')
+print('- event-interval variability')
+print('- gait asymmetry (requires bilateral sensing)')
+print('- movement intensity / consistency')
+print('These should be reported as exploratory indicators, not a diagnosis.')
