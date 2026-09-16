@@ -1,9 +1,26 @@
+"use client";
+
+import Link from "next/link";
+import { useState, type FormEvent } from "react";
+import { useRouter } from "next/navigation";
+
+function BrandMark() {
+  return <span className="home-brand-mark" aria-hidden="true"><i /><i /><i /></span>;
+}
+
 export default function Home() {
-  return (
-    <main className="flex min-h-screen items-center justify-center">
-      <h1 className="text-3xl font-bold">
-        ActiGait is working
-      </h1>
-    </main>
-  );
+  const router = useRouter();
+  const [name, setName] = useState("");
+  const [deviceCode, setDeviceCode] = useState("");
+  const [aboutOpen, setAboutOpen] = useState(false);
+
+  const initializeSession = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    const cleanName = name.trim();
+    if (!cleanName) return;
+    window.localStorage.setItem("actigait-session", JSON.stringify({ name: cleanName, deviceCode: deviceCode.trim() }));
+    router.push("/dashboard");
+  };
+
+  return <main className="home-shell"><nav className="home-nav"><Link className="home-brand" href="/"><BrandMark /><span><strong>ACTIGAIT</strong><small>EXOSUIT / OS 2.4</small></span></Link><div className="home-nav-links"><Link href="/dashboard/gait-analysis">Gait analysis</Link><Link href="/dashboard">Control center</Link></div><Link className="home-nav-cta" href="/dashboard"><span>OPEN CONSOLE</span><b>-&gt;</b></Link></nav><section className="home-hero"><div className="home-hero-copy"><div className="home-kicker"><span className="home-pulse" /> LOCAL DEMO / EXOSUIT OPERATING SYSTEM</div><h1>Movement, <em>made intelligent.</em></h1><p>ActiGait is a simulated exosuit control platform for exploring movement intent, gait signals, and adaptive assistance in one focused workspace.</p><form className="home-session-form" onSubmit={initializeSession}><div className="home-form-heading"><span className="home-form-index">01</span><div><strong>Initialize a local session</strong><small>Introduce yourself to the control center</small></div></div><div className="home-form-fields"><label><span>OPERATOR NAME</span><input required value={name} onChange={(event) => setName(event.target.value)} placeholder="Enter your name" autoComplete="name" /></label><label><span>DEVICE / SESSION CODE <em>OPTIONAL</em></span><input value={deviceCode} onChange={(event) => setDeviceCode(event.target.value)} placeholder="AG-X / 0418" /></label></div><button className="home-primary home-session-submit" type="submit">Enter control center <span>-&gt;</span></button></form><div className="home-actions"><Link className="home-secondary" href="/dashboard/gait-analysis">Explore gait analysis</Link><button className="home-about-link" type="button" onClick={() => setAboutOpen(true)}>Understand ActiGait <span>+</span></button></div><div className="home-disclaimer"><span>i</span><span>SIMULATED INTERFACE</span><p>All readings are local demo values for product exploration. No medical device is connected.</p></div></div><div className="home-system-visual" aria-label="Abstract simulated exosuit system visualization"><div className="home-orbit home-orbit-outer" /><div className="home-orbit home-orbit-inner" /><div className="home-figure"><div className="home-figure-core"><span>AG-X</span><strong>READY</strong></div><i className="home-joint home-joint-left" /><i className="home-joint home-joint-right" /><i className="home-joint home-joint-bottom" /></div><div className="home-signal home-signal-top">CONNECTION <strong>EXCELLENT</strong></div><div className="home-signal home-signal-bottom">CYCLE MODEL <strong>ACTIVE</strong></div></div></section><section className="home-strip"><div><span className="home-strip-index">01</span><div><strong>Observe</strong><p>See simulated movement signals resolve in real time.</p></div></div><div><span className="home-strip-index">02</span><div><strong>Understand</strong><p>Compare cadence, symmetry, and cycle behavior.</p></div></div><div><span className="home-strip-index">03</span><div><strong>Adapt</strong><p>Shape assistance response through the local controls.</p></div></div></section><section className="home-builders"><div className="home-builders-heading"><span className="home-kicker"><span className="home-pulse home-pulse-green" /> BUILDERS</span><p>The people shaping this control platform.</p></div><div className="home-builder-list"><div><strong>Nithin</strong><span>Full stack UI and insights</span></div><div><strong>Farzaan</strong><span>ML &amp; biomechanics analyst</span></div><div><strong>Kamalesh</strong><span>Backend and data architect</span></div><div><strong>Sanjai</strong><span>Lead embedded engineer</span></div><div><strong>Deivani</strong><span>Hardware and telemetry bridge</span></div></div></section><footer className="home-footer"><span>ACTIGAIT EXOSUIT / CONTROL PLATFORM</span><span><i className="home-pulse home-pulse-green" /> SYSTEM READY / DEMO MODE</span></footer>{aboutOpen && <div className="home-about-scrim" role="presentation" onClick={() => setAboutOpen(false)}><section className="home-about-panel" role="dialog" aria-modal="true" aria-labelledby="about-actigait-title" onClick={(event) => event.stopPropagation()}><div className="home-about-header"><div><span className="home-kicker">PLATFORM BRIEF / LOCAL DEMO</span><h2 id="about-actigait-title">What is ActiGait?</h2></div><button type="button" onClick={() => setAboutOpen(false)} aria-label="Close ActiGait information">x</button></div><div className="home-about-grid"><div><strong>01 / What problem are we exploring?</strong><p>How can a wearable system understand intended movement and respond with useful support?</p></div><div><strong>02 / What is an exosuit?</strong><p>An exosuit is a wearable robotic support system designed to assist human movement.</p></div><div><strong>03 / What does gait analysis mean?</strong><p>Gait is the way a person walks, including timing, balance, stride, symmetry, and movement patterns.</p></div><div><strong>04 / How does ActiGait work?</strong><p>It brings together movement intent, gait signals, machine-learning concepts, biomechanics, embedded systems, hardware telemetry, and backend data processing.</p></div><div><strong>05 / What makes the platform useful?</strong><p>It gives those technical layers one understandable workspace for exploration, research, prototyping, and product demonstration.</p></div><div><strong>06 / What is simulated here?</strong><p>This local demo uses simulated signals and interface behavior. It does not connect to a real medical device and makes no clinical claims.</p></div></div></section></div>}</main>;
 }
