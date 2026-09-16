@@ -1,0 +1,2 @@
+samples,recording_segments,total_sensor_duration_s,median_sample_interval_s,estimated_sample_rate_hz,heel_zero_pct,heel_saturated_pct,toe_zero_pct,toe_saturated_pct,candidate_events,valid_event_intervals,candidate_cadence_spm,event_interval_mean_s,event_interval_std_s,event_interval_cv_pct,imu_event_min_distance_s
+12994,7,688.311,0.05299999999999727,18.867924528302858,35.55487147914422,57.78820994305064,83.584731414499,5.456364475911959,551,428,80.86253369272343,0.808126168224299,0.3320316713967979,41.08661301320972,0.45
