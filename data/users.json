@@ -1,1 +1,11 @@
-[]
+[
+  {
+    "id": "user_c08731feb7c4138c",
+    "fullName": "Kamaleshwer SK",
+    "username": "kamaleshwersk@gmail.com",
+    "email": "kamaleshwersk@gmail.com",
+    "passwordHash": "7981b15d1722ba461f7ed743b4e9c4c6:8ab6b6ba3463e1b48d04b9c70d2e997f62b5b191cfe91b2b45561d04cf4dfa08e9fe93b5ae886e63538c4e7efdf770e9eea0c2cd81c6448047f4c55751005234",
+    "createdAt": "2026-09-16T04:47:21.613Z",
+    "deviceCode": "x"
+  }
+]

@@ -3,40 +3,57 @@
 #include <Wire.h>
 #include <Adafruit_MPU6050.h>
 #include <Adafruit_Sensor.h>
+#include <ESP32Servo.h>
 
 // ==========================================
 // Wi-Fi Configuration
-// Replace with your local Wi-Fi credentials
 // ==========================================
-const char* WIFI_SSID     = "YOUR_WIFI_SSID";
-const char* WIFI_PASSWORD = "YOUR_WIFI_PASSWORD";
+const char* WIFI_SSID     = "Pixel_3309";
+const char* WIFI_PASSWORD = "skillissue";
 
-// Replace with your development machine's local IP address
-// e.g., "http://192.168.1.100:8000/telemetry"
-const char* TELEMETRY_SERVER_URL = "http://192.168.1.100:8000/telemetry";
+// FastAPI server URL (Note: ensure port :8000 is included if running default FastAPI)
+const char* TELEMETRY_SERVER_URL = "http://172.16.131.187:8000/telemetry";
 
+// ==========================================
+// Hardware Objects
+// ==========================================
 Adafruit_MPU6050 mpu;
+Servo assistServo;
 
-// FSR pins
+// ==========================================
+// Pin Definitions
+// ==========================================
 const int HEEL_FSR_PIN = 32;
 const int TOE_FSR_PIN  = 33;
 
-// MPU6050 I2C pins
 const int SDA_PIN = 21;
 const int SCL_PIN = 22;
 
-const float FSR_STANCE_THRESHOLD = 150.0;
+const int SERVO_PIN = 18;
+
+// ==========================================
+// Servo & Threshold Calibration
+// ==========================================
+const int SLACK_ANGLE  = 20;  // Cable relaxed during stance
+const int ASSIST_ANGLE = 0;   // Cable tensioned to assist foot lift
+const int HEEL_THRESHOLD = 1000;
+
+// ==========================================
+// State Machine Variables
+// ==========================================
+bool heelWasLoaded = false;
+bool assisting = false;
 
 void setup() {
   Serial.begin(115200);
   delay(1000);
 
-  // Initialize I2C
+  // ---------- I2C ----------
   Wire.begin(SDA_PIN, SCL_PIN);
 
-  // Initialize MPU6050
+  // ---------- MPU6050 ----------
   if (!mpu.begin()) {
-    Serial.println("[ERROR] MPU6050 not detected. Halting.");
+    Serial.println("[ERROR] MPU6050 NOT FOUND!");
     while (1) {
       delay(1000);
     }
@@ -46,7 +63,12 @@ void setup() {
   mpu.setGyroRange(MPU6050_RANGE_500_DEG);
   mpu.setFilterBandwidth(MPU6050_BAND_21_HZ);
 
-  // Connect to Wi-Fi
+  // ---------- SERVO ----------
+  assistServo.setPeriodHertz(50);
+  assistServo.attach(SERVO_PIN, 500, 2400);
+  assistServo.write(SLACK_ANGLE); // Start relaxed
+
+  // ---------- Wi-Fi Connection ----------
   Serial.print("[INFO] Connecting to Wi-Fi: ");
   Serial.println(WIFI_SSID);
   WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
@@ -63,39 +85,100 @@ void setup() {
     Serial.print("[INFO] ESP32 IP: ");
     Serial.println(WiFi.localIP());
   } else {
-    Serial.println("\n[WARN] Wi-Fi connection timed out. Telemetry will stream over Serial only.");
+    Serial.println("\n[WARN] Wi-Fi timed out. Continuing with Serial stream.");
   }
+
+  // ---------- CSV Header ----------
+  Serial.println(
+    "timestamp,heel_fsr,toe_fsr,"
+    "accel_x,accel_y,accel_z,"
+    "gyro_x,gyro_y,gyro_z,"
+    "gait_state,servo_angle"
+  );
 }
 
 void loop() {
-  sensors_event_t accel, gyro, temp;
-  mpu.getEvent(&accel, &gyro, &temp);
+  // ---------- MPU6050 Readings ----------
+  sensors_event_t acceleration;
+  sensors_event_t gyro;
+  sensors_event_t temperature;
+  mpu.getEvent(&acceleration, &gyro, &temperature);
 
+  // ---------- FSR Readings ----------
   int heelPressure = analogRead(HEEL_FSR_PIN);
   int toePressure  = analogRead(TOE_FSR_PIN);
 
-  // Compute shin pitch from accelerometer (in degrees)
-  float pitch = atan2(-accel.acceleration.x, sqrt(accel.acceleration.y * accel.acceleration.y + accel.acceleration.z * accel.acceleration.z)) * 180.0 / PI;
+  // Calculate Shin Pitch (degrees)
+  float pitch = atan2(-acceleration.acceleration.x, 
+                      sqrt(acceleration.acceleration.y * acceleration.acceleration.y + 
+                           acceleration.acceleration.z * acceleration.acceleration.z)) * 180.0 / PI;
 
-  // Determine gait and servo states
-  bool isStance = (heelPressure > FSR_STANCE_THRESHOLD) || (toePressure > FSR_STANCE_THRESHOLD);
-  String gaitState  = isStance ? "STANCE" : "SWING";
-  String servoState = isStance ? "SLACK"  : "TENSION";
+  // ---------- Heel State & Servo Trigger ----------
+  bool heelLoaded = heelPressure >= HEEL_THRESHOLD;
 
-  // Also print to Serial for monitoring
-  Serial.printf("%lu,%d,%d,%.2f,%.2f,%.2f,%.2f,%.2f,%.2f\n",
-    millis(), heelPressure, toePressure,
-    accel.acceleration.x, accel.acceleration.y, accel.acceleration.z,
-    gyro.gyro.x, gyro.gyro.y, gyro.gyro.z
-  );
+  if (heelLoaded) {
+    // Heel Contact -> Relax Cable
+    if (assisting) {
+      Serial.println(">>> HEEL CONTACT - RELEASE <<<");
+      assistServo.write(SLACK_ANGLE);
+      assisting = false;
+    }
+    heelWasLoaded = true;
+  } else {
+    // Heel Off -> Tension Cable to Assist Dorsiflexion
+    if (heelWasLoaded && !assisting) {
+      Serial.println(">>> HEEL OFF - ASSIST <<<");
+      assistServo.write(ASSIST_ANGLE);
+      assisting = true;
+    }
+    heelWasLoaded = false;
+  }
 
-  // If Wi-Fi is connected, send HTTP POST to FastAPI backend
+  // ---------- Determine Gait & Servo State Strings ----------
+  String gaitState;
+  String servoState;
+  int currentAngle = assisting ? ASSIST_ANGLE : SLACK_ANGLE;
+
+  if (assisting) {
+    gaitState  = "SWING_ASSIST";
+    servoState = "TENSION";
+  } else if (heelLoaded) {
+    gaitState  = "STANCE";
+    servoState = "SLACK";
+  } else {
+    gaitState  = "HEEL_OFF";
+    servoState = "SLACK";
+  }
+
+  // ---------- 1. Serial CSV Telemetry ----------
+  Serial.print(millis());
+  Serial.print(",");
+  Serial.print(heelPressure);
+  Serial.print(",");
+  Serial.print(toePressure);
+  Serial.print(",");
+  Serial.print(acceleration.acceleration.x);
+  Serial.print(",");
+  Serial.print(acceleration.acceleration.y);
+  Serial.print(",");
+  Serial.print(acceleration.acceleration.z);
+  Serial.print(",");
+  Serial.print(gyro.gyro.x);
+  Serial.print(",");
+  Serial.print(gyro.gyro.y);
+  Serial.print(",");
+  Serial.print(gyro.gyro.z);
+  Serial.print(",");
+  Serial.print(gaitState);
+  Serial.print(",");
+  Serial.println(currentAngle);
+
+  // ---------- 2. Wi-Fi HTTP Telemetry to FastAPI ----------
   if (WiFi.status() == WL_CONNECTED) {
     HTTPClient http;
     http.begin(TELEMETRY_SERVER_URL);
     http.addHeader("Content-Type", "application/json");
 
-    // Build JSON payload
     String jsonPayload = "{";
     jsonPayload += "\"device_id\":\"actigait-01\",";
     jsonPayload += "\"heel_fsr\":" + String(heelPressure) + ",";
@@ -109,14 +192,12 @@ void loop() {
     jsonPayload += "}";
 
     int httpCode = http.POST(jsonPayload);
-    if (httpCode > 0) {
-      // Success
-    } else {
-      Serial.printf("[HTTP] Error sending POST: %s\n", http.errorToString(httpCode).c_str());
+    if (httpCode <= 0) {
+      // Print error only if needed for debugging
+      // Serial.printf("[HTTP] Error: %s\n", http.errorToString(httpCode).c_str());
     }
     http.end();
   }
 
-  // ~20 Hz sampling rate
   delay(50);
 }
