@@ -1,12 +1,22 @@
 from datetime import datetime, timezone
-from typing import Optional
+from typing import List, Optional
 
 from fastapi import FastAPI, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 from sqlalchemy import create_engine, Column, Integer, Float, String, DateTime
 from sqlalchemy.orm import declarative_base, sessionmaker
 
 app = FastAPI(title="ActiGait Backend")
+
+# Enable CORS for frontend clients (Next.js dashboard, browser apps)
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 # SQLite database
 DATABASE_URL = "sqlite:///./actigait.db"
@@ -127,7 +137,7 @@ def get_latest_telemetry():
 
     return {
         "id": record.id,
-        "timestamp": record.timestamp,
+        "timestamp": record.timestamp.isoformat() if record.timestamp else None,
         "device_id": record.device_id,
         "heel_fsr": record.heel_fsr,
         "toe_fsr": record.toe_fsr,
@@ -138,3 +148,49 @@ def get_latest_telemetry():
         "battery_voltage": record.battery_voltage,
         "fault_code": record.fault_code
     }
+
+
+@app.get("/history")
+def get_telemetry_history(limit: int = 30):
+    db = SessionLocal()
+
+    records = (
+        db.query(TelemetryRecord)
+        .order_by(TelemetryRecord.id.desc())
+        .limit(limit)
+        .all()
+    )
+
+    db.close()
+
+    records = list(reversed(records))
+    return [
+        {
+            "id": r.id,
+            "timestamp": r.timestamp.isoformat() if r.timestamp else None,
+            "device_id": r.device_id,
+            "heel_fsr": r.heel_fsr,
+            "toe_fsr": r.toe_fsr,
+            "pitch": r.pitch,
+            "gyro_y": r.gyro_y,
+            "gait_state": r.gait_state,
+            "servo_state": r.servo_state,
+            "battery_voltage": r.battery_voltage,
+            "fault_code": r.fault_code
+        }
+        for r in records
+    ]
+
+
+@app.delete("/telemetry")
+def clear_telemetry():
+    db = SessionLocal()
+    count = db.query(TelemetryRecord).delete()
+    db.commit()
+    db.close()
+    return {
+        "success": True,
+        "deleted": count,
+        "message": "Telemetry history cleared"
+    }
+
